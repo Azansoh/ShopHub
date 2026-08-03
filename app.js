@@ -6,6 +6,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
 const session = require("express-session");
+const MongoStore = require("connect-mongodb-session")(session);
 const flash = require("connect-flash");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
@@ -45,11 +46,19 @@ app.use(express.json());
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
 
-// 5. Session Setup
+// 5. Session Setup (Persistent store for Vercel serverless)
+const store = new MongoStore({
+    uri: dbUrl,
+    collection: "sessions"
+});
+
+store.on("error", (err) => console.error("Session store error:", err));
+
 const sessionOptions = {
     secret: process.env.SECRET || "thisshouldbeabettersecret!",
     resave: false,
     saveUninitialized: false,
+    store: store,
     cookie: {
         expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
         maxAge: 7 * 24 * 60 * 60 * 1000,
