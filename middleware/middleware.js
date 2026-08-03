@@ -1,6 +1,6 @@
 const Product = require("../Models/products");
 const Order = require("../Models/order");
-const Review = require("../Models/Review");
+const Review = require("../Models/review");
 
 // Check if user is logged in
 module.exports.isLoggedIn = (req, res, next) => {

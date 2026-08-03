@@ -1,4 +1,4 @@
-const Review = require("../Models/Review");
+const Review = require("../Models/review");
 const Product = require("../Models/products");
 
 // Create Review
