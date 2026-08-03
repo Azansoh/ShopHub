@@ -1,0 +1,173 @@
+<% layout("layouts/boilerplate") %>
+
+<div class="container my-5">
+
+    <!-- Header Section -->
+    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4 pb-3 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1 d-flex align-items-center gap-2">
+                My Wishlist 
+                <span class="text-danger fs-3">❤️</span>
+            </h2>
+            <p class="text-muted mb-0">Products saved for later review or purchase.</p>
+        </div>
+        <div>
+            <a href="/products" class="btn btn-outline-primary rounded-pill px-4 fw-semibold shadow-sm">
+                Explore Products
+            </a>
+        </div>
+    </div>
+
+    <% if (!wishlist || wishlist.length === 0) { %>
+
+        <!-- Empty Wishlist State -->
+        <div class="card shadow-sm border-0 rounded-4 my-5 bg-body-tertiary">
+            <div class="card-body text-center py-5">
+                <div class="display-1 text-danger-subtle mb-3">❤️</div>
+                <h3 class="fw-bold text-dark">Your wishlist is empty</h3>
+                <p class="text-muted mb-4 max-w-md mx-auto">
+                    Explore our catalog and save your favorite items here to access them anytime!
+                </p>
+                <a href="/products" class="btn btn-primary rounded-pill px-4 py-2.5 fw-semibold shadow-sm">
+                    Start Shopping
+                </a>
+            </div>
+        </div>
+
+    <% } else { %>
+
+        <!-- Wishlist Grid -->
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            <% wishlist.forEach(product => { %>
+                <div class="col">
+                    <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden position-relative product-card">
+                        
+                        <!-- Floating Remove Button -->
+                        <form 
+                            action="/wishlist/<%= product._id %>?_method=DELETE" 
+                            method="POST" 
+                            class="position-absolute top-0 end-0 m-3 z-3"
+                        >
+                            <button 
+                                type="submit" 
+                                class="btn btn-light btn-sm rounded-circle shadow p-0 d-flex align-items-center justify-content-center text-secondary hover-danger"
+                                style="width: 36px; height: 36px; backdrop-filter: blur(4px); background-color: rgba(255, 255, 255, 0.85);"
+                                title="Remove from Wishlist"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
+                                    <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+                                </svg>
+                            </button>
+                        </form>
+
+                        <!-- Product Image Container -->
+                        <div class="position-relative overflow-hidden bg-light" style="height: 240px;">
+                            <a href="/products/<%= product._id %>" class="d-block h-100">
+                                <% 
+                                    let imgSrc = "https://images.unsplash.com/photo-1505740420928-5e560c06d30e";
+                                    if (product) {
+                                        if (product.images && product.images.length > 0 && product.images[0].url) {
+                                            imgSrc = product.images[0].url;
+                                        } else if (product.image && product.image.url) {
+                                            imgSrc = product.image.url;
+                                        } else if (typeof product.image === 'string') {
+                                            imgSrc = product.image;
+                                        }
+                                    }
+                                %>
+                                <img 
+                                    src="<%= imgSrc %>" 
+                                    class="card-img-top w-100 h-100 object-fit-cover product-img" 
+                                    alt="<%= product ? product.title : 'Product Image' %>"
+                                >
+                            </a>
+                        </div>
+
+                        <!-- Card Body -->
+                        <div class="card-body d-flex flex-column p-4">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                <h5 class="fw-bold text-dark mb-0 text-truncate" style="max-width: 70%;">
+                                    <a href="/products/<%= product._id %>" class="text-dark text-decoration-none">
+                                        <%= product.title %>
+                                    </a>
+                                </h5>
+                                <% if (product.stock > 0) { %>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 fw-medium">
+                                        In Stock
+                                    </span>
+                                <% } else { %>
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2.5 py-1 fw-medium">
+                                        Out of Stock
+                                    </span>
+                                <% } %>
+                            </div>
+
+                            <p class="text-muted small text-truncate-2 mb-3" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.5em;">
+                                <%= product.description %>
+                            </p>
+
+                            <div class="mt-auto">
+                                <h4 class="text-primary fw-bold mb-3">
+                                    Rs. <%= product.price ? product.price.toLocaleString() : '0' %>
+                                </h4>
+
+                                <!-- Action Buttons -->
+                                <div class="d-flex gap-2">
+                                    <a 
+                                        href="/products/<%= product._id %>" 
+                                        class="btn btn-outline-secondary w-50 fw-semibold rounded-3 py-2"
+                                    >
+                                        Details
+                                    </a>
+
+                                    <% if (product.stock > 0) { %>
+                                        <form 
+                                            action="/wishlist/<%= product._id %>/cart" 
+                                            method="POST" 
+                                            class="w-50"
+                                        >
+                                            <button type="submit" class="btn btn-primary w-100 fw-semibold rounded-3 py-2 shadow-sm d-flex align-items-center justify-content-center gap-1">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cart-plus" viewBox="0 0 16 16">
+                                                    <path d="M9 5.5a.5.5 0 0 0-1 0V7H6.5a.5.5 0 0 0 0 1H8v1.5a.5.5 0 0 0 1 0V8h1.5a.5.5 0 0 0 0-1H9z"/>
+                                                    <path d="M.5 1a.5.5 0 0 0 0 1h1.11l.401 1.607 1.498 7.985A.5.5 0 0 0 4 12h1a2 2 0 1 0 0 4 2 2 0 0 0 0-4h7a2 2 0 1 0 0 4 2 2 0 0 0 0-4h1a.5.5 0 0 0 .491-.408l1.5-8A.5.5 0 0 0 14.5 3H2.89l-.405-1.621A.5.5 0 0 0 2 1zm3.915 10L3.102 4h10.796l-1.313 7zM6 14a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm7 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                                                </svg>
+                                                Add to Cart
+                                            </button>
+                                        </form>
+                                    <% } else { %>
+                                        <button class="btn btn-secondary w-50 fw-semibold rounded-3 py-2" disabled>
+                                            Unavailable
+                                        </button>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+
+    <% } %>
+
+</div>
+
+<style>
+    .product-card {
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .product-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.08) !important;
+    }
+    .product-img {
+        transition: transform 0.3s ease;
+    }
+    .product-card:hover .product-img {
+        transform: scale(1.04);
+    }
+    .hover-danger:hover {
+        background-color: #dc3545 !important;
+        color: #fff !important;
+    }
+</style>

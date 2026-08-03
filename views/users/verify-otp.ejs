@@ -1,0 +1,43 @@
+<% layout("layouts/boilerplate") %>
+
+<div class="row mt-5 mb-5 justify-content-center">
+    <div class="col-md-8 col-lg-5">
+        <div class="card border-0 shadow-lg rounded-4 p-4 p-md-5">
+            <div class="text-center mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-circle mb-3" style="width: 60px; height: 60px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-shield-lock" viewBox="0 0 16 16">
+                        <path d="M5.338 1.59a61 61 0 0 0-2.837.856.48.48 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.7 10.7 0 0 0 2.287 2.233c.346.244.652.42.893.533q.18.085.293.118a1 1 0 0 0 .101.025 1 1 0 0 0 .1-.025q.114-.034.294-.118c.24-.113.546-.29.893-.533a10.7 10.7 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.5 1.5 0 0 1 1.044 1.262c.599 4.497-.731 7.855-2.42 10.065a12.2 12.2 0 0 1-2.646 2.582c-.373.262-.751.492-1.077.644a1.8 1.8 0 0 1-.301.115 1.7 1.7 0 0 1-.861 0 1.8 1.8 0 0 1-.302-.115 11.5 11.5 0 0 1-1.076-.644 12.2 12.2 0 0 1-2.647-2.582C1.729 10.587.399 7.229.998 2.732A1.5 1.5 0 0 1 2.042 1.43c.658-.215 1.777-.57 2.887-.87z"/>
+                        <path d="M8 5a1 1 0 0 0-1 1v1h-1a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1h-1V6a1 1 0 0 0-1-1m-1 3h2v3H7z"/>
+                    </svg>
+                </div>
+                <h3 class="fw-bold text-dark">Email Verification</h3>
+                <p class="text-muted small mb-0">
+                    Enter the 6-digit security code sent to your email address. 
+                </p>
+                <span class="badge text-bg-warning mt-2 fw-normal">Expires in 5 minutes</span>
+            </div>
+
+            <form method="POST" action="/verify-otp">
+                <div class="mb-4">
+                    <label for="otp" class="form-label fw-semibold visually-hidden">6-Digit Code</label>
+                    <input 
+                        type="text" 
+                        id="otp"
+                        name="otp" 
+                        class="form-control text-center fs-3 fw-bold rounded-3 letter-spacing-2 py-2" 
+                        placeholder="••••••"
+                        maxlength="6"
+                        pattern="\d{6}"
+                        required 
+                        autocomplete="off"
+                        autofocus
+                    />
+                </div>
+
+                <button class="btn btn-primary w-100 py-3 fw-semibold rounded-3 shadow-sm">
+                    Verify Code
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

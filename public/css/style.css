@@ -1,0 +1,84 @@
+body{
+
+background:#f5f5f5;
+
+}
+
+.card{
+
+margin-top:20px;
+
+transition:.3s;
+
+}
+
+.card:hover{
+
+transform:scale(1.03);
+
+}
+
+
+
+/* ===================================================
+   1. Ultra-Modern Glassmorphic Dark Arrow Button
+   =================================================== */
+.custom-arrow-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    /* Dark gradient background with subtle transparency */
+    background: linear-gradient(135deg, rgba(30, 30, 30, 0.85), rgba(10, 10, 10, 0.95));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: #f8f9fa;
+    /* Subtle neon gradient rim */
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), 
+                inset 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+.custom-arrow-btn:hover {
+    background: #000000;
+    color: #0d6efd; /* Accent glow color */
+    border-color: rgba(13, 110, 253, 0.6);
+    transform: scale(1.12) translateY(-2px);
+    /* Outer accent glow + depth shadow */
+    box-shadow: 0 0 20px rgba(13, 110, 253, 0.35), 
+                0 12px 25px rgba(0, 0, 0, 0.6);
+}
+
+.custom-arrow-btn:active {
+    transform: scale(0.95);
+}
+
+/* ===================================================
+   2. Sleek Bootstrap Carousel Arrow Overrides
+   =================================================== */
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+    width: 44px;
+    height: 44px;
+    background-color: rgba(15, 15, 15, 0.85) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background-size: 45% 45%;
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+}
+
+.carousel-control-prev:hover .carousel-control-prev-icon,
+.carousel-control-next:hover .carousel-control-next-icon {
+    background-color: #000000 !important;
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: scale(1.15);
+    filter: drop-shadow(0 6px 15px rgba(0, 0, 0, 0.8));
+}

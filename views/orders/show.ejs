@@ -1,0 +1,317 @@
+<% layout("layouts/boilerplate") %>
+
+
+
+<div class="container my-5">
+
+    <!-- Order Header -->
+    <div class="text-center mb-5">
+        <% if (order.status === "Cancelled") { %>
+            <div class="display-4 text-danger mb-2">
+                <i class="bi bi-x-circle-fill"></i>
+            </div>
+            <h1 class="fw-bold text-danger">Order Cancelled</h1>
+            <p class="lead text-muted">
+                This order for <strong class="text-dark"><%= order.customer?.fullName %></strong> was cancelled and will not be processed.
+            </p>
+        <% } else { %>
+            <div class="display-4 text-success mb-2">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <h1 class="fw-bold text-success">Order Confirmed!</h1>
+            <p class="lead text-dark">
+                Thank you for your purchase, <strong><%= order.customer?.fullName %></strong>!
+            </p>
+            <p class="text-muted">
+                Your order has been placed successfully and is being prepared.
+            </p>
+        <% } %>
+    </div>
+
+    <!-- Order Status Tracker -->
+    <% if (order.status === "Cancelled") { %>
+        <div class="alert alert-danger rounded-4 border-0 shadow-sm p-4 mb-4">
+            <h5 class="alert-heading fw-bold mb-2">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>Order Cancelled
+            </h5>
+            <p class="mb-0">
+                This order has been cancelled and will not be delivered. If you have questions, please reach out to customer support.
+            </p>
+        </div>
+    <% } else { %>
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-header bg-white border-bottom-0 pt-4 px-4">
+                <h5 class="fw-bold m-0 text-dark">Order Tracker</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row text-center position-relative">
+
+                    <!-- Pending -->
+                    <div class="col">
+                        <div class="mb-2">
+                            <% if (["Pending", "Processing", "Shipped", "Delivered"].includes(order.status)) { %>
+                                <span class="badge bg-success rounded-circle p-3 shadow-sm"><i class="bi bi-check-lg fs-5"></i></span>
+                            <% } else { %>
+                                <span class="badge bg-light text-muted border rounded-circle p-3">1</span>
+                            <% } %>
+                        </div>
+                        <strong class="d-block small text-dark mt-1">Pending</strong>
+                    </div>
+
+                    <!-- Processing -->
+                    <div class="col">
+                        <div class="mb-2">
+                            <% if (["Processing", "Shipped", "Delivered"].includes(order.status)) { %>
+                                <span class="badge bg-success rounded-circle p-3 shadow-sm"><i class="bi bi-check-lg fs-5"></i></span>
+                            <% } else { %>
+                                <span class="badge bg-light text-muted border rounded-circle p-3">2</span>
+                            <% } %>
+                        </div>
+                        <strong class="d-block small text-dark mt-1">Processing</strong>
+                    </div>
+
+                    <!-- Shipped -->
+                    <div class="col">
+                        <div class="mb-2">
+                            <% if (["Shipped", "Delivered"].includes(order.status)) { %>
+                                <span class="badge bg-success rounded-circle p-3 shadow-sm"><i class="bi bi-check-lg fs-5"></i></span>
+                            <% } else { %>
+                                <span class="badge bg-light text-muted border rounded-circle p-3">3</span>
+                            <% } %>
+                        </div>
+                        <strong class="d-block small text-dark mt-1">Shipped</strong>
+                    </div>
+
+                    <!-- Delivered -->
+                    <div class="col">
+                        <div class="mb-2">
+                            <% if (order.status === "Delivered") { %>
+                                <span class="badge bg-success rounded-circle p-3 shadow-sm"><i class="bi bi-check-lg fs-5"></i></span>
+                            <% } else { %>
+                                <span class="badge bg-light text-muted border rounded-circle p-3">4</span>
+                            <% } %>
+                        </div>
+                        <strong class="d-block small text-dark mt-1">Delivered</strong>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    <% } %>
+
+    <div class="row g-4 mb-4">
+        <!-- Order Summary Card -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-bottom-0 pt-4 px-4">
+                    <h5 class="fw-bold m-0 text-dark"><i class="bi bi-receipt me-2 text-primary"></i>Order Overview</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Order ID:</span>
+                        <span class="fw-bold font-monospace text-dark">#<%= order._id %></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Order Date:</span>
+                        <span class="fw-semibold text-dark"><%= new Date(order.createdAt).toLocaleDateString() %></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 align-items-center">
+                        <span class="text-muted">Status:</span>
+                        <% if (order.status === "Pending") { %>
+                            <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-3 py-1 fw-semibold">Pending</span>
+                        <% } else if (order.status === "Processing") { %>
+                            <span class="badge bg-info-subtle text-info-emphasis rounded-pill px-3 py-1 fw-semibold">Processing</span>
+                        <% } else if (order.status === "Shipped") { %>
+                            <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1 fw-semibold">Shipped</span>
+                        <% } else if (order.status === "Delivered") { %>
+                            <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1 fw-semibold">Delivered</span>
+                        <% } else if (order.status === "Cancelled") { %>
+                            <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-1 fw-semibold">Cancelled</span>
+                        <% } %>
+                    </div>
+                    <hr class="my-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold text-dark">Total Amount:</span>
+                        <h4 class="fw-bold text-primary m-0">Rs. <%= (order.totalAmount || 0).toLocaleString() %></h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment & Delivery Info -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-bottom-0 pt-4 px-4">
+                    <h5 class="fw-bold m-0 text-dark"><i class="bi bi-geo-alt me-2 text-primary"></i>Delivery & Payment Details</h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="mb-1"><strong>Name:</strong> <%= order.customer?.fullName %></p>
+                    <p class="mb-1"><strong>Address:</strong> <%= order.customer?.address %></p>
+                    <p class="mb-1"><strong>City:</strong> <%= order.customer?.city %></p>
+                    <p class="mb-3"><strong>Phone:</strong> <%= order.customer?.phone %></p>
+
+                    <div class="p-3 bg-light rounded-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="small text-muted fw-semibold">Payment Method</span>
+                            <% if (order.payment?.method === "COD") { %>
+                                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-3 py-1">💵 Cash on Delivery</span>
+                            <% } else if (order.payment?.method === "Online") { %>
+                                <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1">💳 Online Payment</span>
+                            <% } else { %>
+                                <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-1">Not Selected</span>
+                            <% } %>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="small text-muted fw-semibold">Payment Status</span>
+                            <% if (order.payment?.status === "Paid") { %>
+                                <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1">✓ Paid</span>
+                            <% } else if (order.payment?.status === "Failed") { %>
+                                <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-1">✕ Failed</span>
+                            <% } else { %>
+                                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-3 py-1">Pending</span>
+                            <% } %>
+                        </div>
+                        <% if (order.payment?.paidAt) { %>
+                            <div class="mt-2 pt-2 border-top fs-7 text-muted">
+                                <strong>Paid On:</strong> <%= new Date(order.payment.paidAt).toLocaleString() %>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Account Information -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-bottom-0 pt-4 px-4">
+            <h5 class="fw-bold m-0 text-dark"><i class="bi bi-person me-2 text-primary"></i>Customer Account</h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="row">
+                <div class="col-md-6 mb-2 mb-md-0">
+                    <span class="text-muted d-block small">Username</span>
+                    <strong class="text-dark"><%= order.user ? order.user.username : 'N/A' %></strong>
+                </div>
+                <div class="col-md-6">
+                    <span class="text-muted d-block small">Email Address</span>
+                    <strong class="text-dark"><%= order.user ? order.user.email : 'N/A' %></strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ordered Products -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-bottom-0 pt-4 px-4">
+            <h5 class="fw-bold m-0 text-dark"><i class="bi bi-box me-2 text-primary"></i>Ordered Products</h5>
+        </div>
+        <div class="card-body p-4">
+            <% order.items.forEach(item => { %>
+                <div class="row align-items-center border-bottom py-3 g-2">
+                    <div class="col-md-5">
+                        <h6 class="mb-0 fw-bold text-dark"><%= item.title %></h6>
+                    </div>
+                    <div class="col-md-2">
+                        <span class="text-muted small">Unit Price:</span>
+                        <span class="fw-medium text-dark d-block">Rs. <%= (item.price || 0).toLocaleString() %></span>
+                    </div>
+                    <div class="col-md-2">
+                        <span class="text-muted small">Quantity:</span>
+                        <span class="fw-medium text-dark d-block"><%= item.quantity %></span>
+                    </div>
+                    <div class="col-md-3 text-md-end">
+                        <span class="text-muted small">Subtotal:</span>
+                        <strong class="text-dark d-block">
+                            Rs. <%= ((item.subtotal ?? (item.price * item.quantity)) || 0).toLocaleString() %>
+                        </strong>
+                    </div>
+                </div>
+            <% }) %>
+
+            <!-- Total Summary -->
+            <div class="row mt-4 align-items-center">
+                <div class="col-md-9 text-md-end">
+                    <h5 class="fw-bold text-dark mb-0">Total Amount:</h5>
+                </div>
+                <div class="col-md-3 text-md-end">
+                    <h4 class="fw-bold mb-0 <%= order.status === 'Cancelled' ? 'text-muted text-decoration-line-through' : 'text-success' %>">
+                        Rs. <%= (order.totalAmount || 0).toLocaleString() %>
+                    </h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">
+        <a href="/products" class="btn btn-primary rounded-pill px-4 shadow-sm fw-semibold">
+            <i class="bi bi-bag me-1"></i>Continue Shopping
+        </a>
+
+        <a href="/orders" class="btn btn-outline-secondary rounded-pill px-4 fw-semibold">
+            <i class="bi bi-list-ul me-1"></i>My Orders
+        </a>
+
+        <% if (["Pending", "Processing"].includes(order.status)) { %>
+            <button 
+                type="button" 
+                class="btn btn-danger rounded-pill px-4 shadow-sm fw-semibold" 
+                data-bs-toggle="modal" 
+                data-bs-target="#cancelOrderModal"
+            >
+                <i class="bi bi-x-circle me-1"></i>Cancel Order
+            </button>
+        <% } %>
+    </div>
+
+    <!-- Cancel Order Modal -->
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            
+            <!-- Header with subtle alert tint -->
+            <div class="modal-header bg-danger-subtle border-0 pt-4 px-4 pb-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-danger bg-opacity-10 p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                        <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark mb-0" id="cancelOrderModalLabel">Cancel Order</h5>
+                        <small class="text-muted font-monospace">#<%= order._id.toString().slice(-8) %></small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close align-self-start mt-1" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body px-4 py-4">
+                <p class="text-secondary mb-2">
+                    Are you sure you want to cancel order <strong class="text-dark">#<%= order._id %></strong>?
+                </p>
+                <div class="p-3 bg-light rounded-3 border border-dashed">
+                    <div class="d-flex align-items-center text-muted small">
+                        <i class="bi bi-info-circle me-2 text-danger"></i>
+                        <span>This action is permanent and cannot be undo.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer border-0 px-4 pb-4 pt-0 gap-2">
+                <button type="button" class="btn btn-light rounded-pill px-4 fw-semibold text-secondary flex-grow-1" data-bs-dismiss="modal">
+                    Keep Order
+                </button>
+              <!-- Cancel Form Submission -->
+        <form action="/orders/<%= order._id %>/cancel?_method=PATCH" method="POST" class="flex-grow-1 m-0">
+            <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold shadow-sm w-100">
+                Confirm Cancellation
+            </button>
+        </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+</div>

@@ -1,0 +1,102 @@
+<% layout("layouts/boilerplate") %>
+
+<div class="container my-5">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h1 class="fw-bold mb-1 text-dark">My Orders</h1>
+            <p class="text-muted mb-0">Track and manage your order history</p>
+        </div>
+
+        <a href="/products" class="btn btn-primary rounded-pill px-4 shadow-sm fw-semibold">
+            <i class="bi bi-shop me-2"></i>Continue Shopping
+        </a>
+    </div>
+
+    <% if (orders.length === 0) { %>
+
+        <div class="text-center py-5 bg-light rounded-4 shadow-sm border border-dashed my-4">
+            <div class="mb-3">
+                <i class="bi bi-box-seam display-1 text-muted opacity-50"></i>
+            </div>
+            <h3 class="fw-bold text-dark">You haven't placed any orders yet</h3>
+            <p class="text-muted mb-4">
+                Your orders will appear here after you make a purchase.
+            </p>
+            <a href="/products" class="btn btn-primary btn-lg rounded-pill px-4 shadow-sm fw-bold">
+                Start Shopping
+            </a>
+        </div>
+
+    <% } else { %>
+
+        <div class="d-flex flex-column gap-3">
+            <% orders.forEach(order => { %>
+
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden transition-all">
+                    <div class="card-body p-4">
+                        <div class="row align-items-center g-3">
+
+                            <!-- Order ID -->
+                            <div class="col-6 col-md-3">
+                                <small class="text-muted d-block fw-semibold text-uppercase fs-7">Order ID</small>
+                                <span class="fw-bold text-dark font-monospace">#<%= order._id.toString().slice(-8) %></span>
+                            </div>
+
+                            <!-- Date -->
+                            <div class="col-6 col-md-2">
+                                <small class="text-muted d-block fw-semibold text-uppercase fs-7">Date</small>
+                                <span class="fw-medium text-dark"><%= order.createdAt.toLocaleDateString() %></span>
+                            </div>
+
+                            <!-- Status -->
+                            <div class="col-6 col-md-2">
+                                <small class="text-muted d-block fw-semibold text-uppercase fs-7 mb-1">Status</small>
+                                <% if (order.status === "Pending") { %>
+                                    <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-3 py-2 fw-semibold">
+                                        ● Pending
+                                    </span>
+                                <% } else if (order.status === "Processing") { %>
+                                    <span class="badge bg-info-subtle text-info-emphasis rounded-pill px-3 py-2 fw-semibold">
+                                        ● Processing
+                                    </span>
+                                <% } else if (order.status === "Shipped") { %>
+                                    <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 fw-semibold">
+                                        ● Shipped
+                                    </span>
+                                <% } else if (order.status === "Delivered") { %>
+                                    <span class="badge bg-success-subtle text-success rounded-pill px-3 py-2 fw-semibold">
+                                        ● Delivered
+                                    </span>
+                                <% } else if (order.status === "Cancelled") { %>
+                                    <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-2 fw-semibold">
+                                        ● Cancelled
+                                    </span>
+                                <% } %>
+                            </div>
+
+                            <!-- Total -->
+                            <div class="col-6 col-md-2">
+                                <small class="text-muted d-block fw-semibold text-uppercase fs-7">Total</small>
+                                <span class="fw-bold text-dark fs-6">
+                                    Rs. <%= order.totalAmount.toLocaleString() %>
+                                </span>
+                            </div>
+
+                            <!-- View Button -->
+                            <div class="col-12 col-md-3 text-md-end">
+                                <a href="/orders/<%= order._id %>" class="btn btn-outline-primary rounded-pill px-4 fw-semibold w-100 w-md-auto">
+                                    View Order Details
+                                </a>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            <% }) %>
+        </div>
+
+    <% } %>
+
+</div>

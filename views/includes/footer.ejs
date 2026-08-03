@@ -1,0 +1,54 @@
+<footer class="bg-dark text-white pt-5 pb-4 mt-auto border-top border-secondary-subtle">
+    <div class="container">
+        <div class="row gy-4">
+            
+            <!-- Brand & About -->
+            <div class="col-md-4 text-center text-md-start">
+                <h5 class="text-uppercase fw-bold text-primary mb-3">ShopHub</h5>
+                <p class="small text-secondary mb-0">
+                    Your trusted marketplace for premium quality products and seamless shopping experiences.
+                </p>
+            </div>
+
+            <!-- Quick Navigation Links -->
+            <div class="col-md-4 text-center">
+                <h6 class="text-uppercase fw-bold mb-3 text-light">Quick Links</h6>
+                <ul class="list-unstyled mb-0 small d-flex flex-column gap-2">
+                    <li><a href="/products" class="text-decoration-none text-secondary hover-white transition">Browse Products</a></li>
+                    <% if (currentUser) { %>
+                        <li><a href="/orders" class="text-decoration-none text-secondary hover-white transition">My Orders</a></li>
+                    <% } %>
+                    <li><a href="/cart" class="text-decoration-none text-secondary hover-white transition">Shopping Cart</a></li>
+                </ul>
+            </div>
+
+            <!-- Customer Support Info -->
+            <div class="col-md-4 text-center text-md-end">
+                <h6 class="text-uppercase fw-bold mb-3 text-light">Support</h6>
+                <p class="small text-secondary mb-2 d-flex align-items-center justify-content-center justify-content-md-end gap-2">
+                    <i class="bi bi-envelope text-primary"></i> support@shophub.com
+                </p>
+                <p class="small text-secondary mb-0 d-flex align-items-center justify-content-center justify-content-md-end gap-2">
+                    <i class="bi bi-telephone text-primary"></i> +1 (800) 555-0199
+                </p>
+            </div>
+
+        </div>
+
+        <hr class="my-4 border-secondary-subtle opacity-25" />
+
+        <!-- Bottom Copyright -->
+        <div class="text-center text-secondary small">
+            © <%= new Date().getFullYear() %> <strong class="text-light">ShopHub</strong>. All Rights Reserved.
+        </div>
+    </div>
+</footer>
+
+<style>
+    .hover-white:hover {
+        color: #fff !important;
+    }
+    .transition {
+        transition: color 0.2s ease;
+    }
+</style>

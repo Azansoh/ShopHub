@@ -1,0 +1,144 @@
+<% layout("layouts/boilerplate") %>
+
+<div class="container my-5">
+
+    <!-- Header Section -->
+    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4 pb-3 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1 d-flex align-items-center gap-2">
+                All Orders 
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fs-6 fw-normal">Admin Dashboard</span>
+            </h2>
+            <p class="text-muted mb-0">Manage and track customer order updates across the platform.</p>
+        </div>
+        <div>
+            <a href="/products" class="btn btn-outline-primary rounded-pill px-4 fw-semibold shadow-sm">
+                ← Back to Store
+            </a>
+        </div>
+    </div>
+
+    <% if (!orders || orders.length === 0) { %>
+
+        <!-- Empty State -->
+        <div class="card border-0 shadow-sm rounded-4 text-center py-5 bg-body-tertiary">
+            <div class="card-body">
+                <div class="display-3 text-muted mb-3">📦</div>
+                <h4 class="fw-bold text-dark">No orders found</h4>
+                <p class="text-muted mb-0">No customer orders have been placed yet.</p>
+            </div>
+        </div>
+
+    <% } else { %>
+
+        <!-- Orders Table Card -->
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th scope="col" class="ps-4 py-3">Order ID</th>
+                            <th scope="col" class="py-3">Customer</th>
+                            <th scope="col" class="py-3">Date</th>
+                            <th scope="col" class="py-3">Total</th>
+                            <th scope="col" class="py-3">Status</th>
+                            <th scope="col" class="text-end pe-4 py-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="table-group-divider">
+                        <% orders.forEach(order => { %>
+                            <tr>
+                                <!-- Order ID -->
+                                <td class="ps-4">
+                                    <span class="font-monospace text-secondary fw-semibold small">
+                                        #<%= order._id %>
+                                    </span>
+                                </td>
+
+                                <!-- Customer Info -->
+                                <td>
+                                    <div class="fw-bold text-dark">
+                                        <%= order.customer ? order.customer.fullName : "N/A" %>
+                                    </div>
+                                    <small class="text-muted d-block">
+                                        <%= order.customer ? order.customer.phone : "No phone provided" %>
+                                    </small>
+                                </td>
+
+                                <!-- Date -->
+                                <td>
+                                    <span class="text-body-secondary small">
+                                        <%= order.createdAt ? order.createdAt.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : "N/A" %>
+                                    </span>
+                                </td>
+
+                                <!-- Total -->
+                                <td>
+                                    <span class="fw-bold text-primary">
+                                        Rs. <%= order.totalAmount ? order.totalAmount.toLocaleString() : "0" %>
+                                    </span>
+                                </td>
+
+                                <!-- Status Badge -->
+                                <td>
+                                    <% if (order.status === "Pending") { %>
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-3 py-1.5 fw-semibold">
+                                            Pending
+                                        </span>
+                                    <% } else if (order.status === "Processing") { %>
+                                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-3 py-1.5 fw-semibold">
+                                            Processing
+                                        </span>
+                                    <% } else if (order.status === "Shipped") { %>
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1.5 fw-semibold">
+                                            Shipped
+                                        </span>
+                                    <% } else if (order.status === "Delivered") { %>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1.5 fw-semibold">
+                                            Delivered
+                                        </span>
+                                    <% } else if (order.status === "Cancelled") { %>
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1.5 fw-semibold">
+                                            Cancelled
+                                        </span>
+                                    <% } else { %>
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3 py-1.5 fw-semibold">
+                                            <%= order.status %>
+                                        </span>
+                                    <% } %>
+                                </td>
+
+                                <!-- Actions -->
+                                <td class="text-end pe-4 py-3">
+                                    <div class="d-flex align-items-center justify-content-end gap-2">
+                                        <a href="/orders/<%= order._id %>" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-medium">
+                                            Details
+                                        </a>
+
+                                        <!-- Quick Status Update Form -->
+                                        <form action="/orders/admin/<%= order._id %>/status?_method=PATCH" method="POST" class="m-0">
+                                            <div class="input-group input-group-sm">
+                                                <select name="status" class="form-select form-select-sm rounded-start-pill border-secondary-subtle shadow-none" style="font-size: 0.8rem;">
+                                                    <option value="Pending" <%= order.status === "Pending" ? "selected" : "" %>>Pending</option>
+                                                    <option value="Processing" <%= order.status === "Processing" ? "selected" : "" %>>Processing</option>
+                                                    <option value="Shipped" <%= order.status === "Shipped" ? "selected" : "" %>>Shipped</option>
+                                                    <option value="Delivered" <%= order.status === "Delivered" ? "selected" : "" %>>Delivered</option>
+                                                    <option value="Cancelled" <%= order.status === "Cancelled" ? "selected" : "" %>>Cancelled</option>
+                                                </select>
+                                                <button type="submit" class="btn btn-sm btn-success rounded-end-pill px-2.5 fw-semibold">
+                                                    Save
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    <% } %>
+
+</div>

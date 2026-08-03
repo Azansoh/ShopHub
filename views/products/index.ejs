@@ -1,0 +1,164 @@
+<% layout("layouts/boilerplate") %>
+
+<h2 class="mb-4">All Products</h2>
+
+<!-- Search & Filter Form -->
+<div class="container mb-4">
+    <form action="/products" method="GET">
+        <div class="row g-2">
+
+            <!-- Search -->
+            <div class="col-md-3">
+                <input
+                    type="text"
+                    name="search"
+                    class="form-control"
+                    placeholder="Search products..."
+                    value="<%= search || '' %>"
+                >
+            </div>
+
+            <!-- Sort By -->
+            <div class="col-md-2">
+                <select name="sort" class="form-select">
+                    <option value="">Sort By</option>
+                    <option value="priceAsc" <%= sort === "priceAsc" ? "selected" : "" %>>Price: Low to High</option>
+                    <option value="priceDesc" <%= sort === "priceDesc" ? "selected" : "" %>>Price: High to Low</option>
+                    <option value="newest" <%= sort === "newest" ? "selected" : "" %>>Newest</option>
+                </select>
+            </div>
+
+            <!-- Category -->
+            <div class="col-md-2">
+                <select name="category" class="form-select">
+                    <option value="">All Categories</option>
+                    <option value="Electronics" <%= category === "Electronics" ? "selected" : "" %>>Electronics</option>
+                    <option value="Clothing" <%= category === "Clothing" ? "selected" : "" %>>Clothing</option>
+                    <option value="Footwear" <%= category === "Footwear" ? "selected" : "" %>>Footwear</option>
+                    <option value="Beauty & Personal Care" <%= category === "Beauty & Personal Care" ? "selected" : "" %>>Beauty & Personal Care</option>
+                    <option value="Books" <%= category === "Books" ? "selected" : "" %>>Books</option>
+                    <option value="Home & Kitchen" <%= category === "Home & Kitchen" ? "selected" : "" %>>Home & Kitchen</option>
+                    <option value="Sports & Fitness" <%= category === "Sports & Fitness" ? "selected" : "" %>>Sports & Fitness</option>
+                    <option value="Toys & Games" <%= category === "Toys & Games" ? "selected" : "" %>>Toys & Games</option>
+                    <option value="Automotive" <%= category === "Automotive" ? "selected" : "" %>>Automotive</option>
+                    <option value="Groceries" <%= category === "Groceries" ? "selected" : "" %>>Groceries</option>
+                </select>
+            </div>
+
+            <!-- Minimum Price -->
+            <div class="col-md-2">
+                <input type="number" name="minPrice" class="form-control" placeholder="Min price" value="<%= minPrice || '' %>">
+            </div>
+
+            <!-- Maximum Price -->
+            <div class="col-md-2">
+                <input type="number" name="maxPrice" class="form-control" placeholder="Max price" value="<%= maxPrice || '' %>">
+            </div>
+
+            <!-- Search Button -->
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-primary w-100">Search</button>
+            </div>
+
+        </div>
+    </form>
+</div>
+
+<!-- Products Grid -->
+<div class="row">
+<% if (allProducts && allProducts.length > 0) { %>
+    <% allProducts.forEach(product => { %>
+        <div class="col-md-4 mb-4">
+            <div class="card shadow">
+                <!-- Checked array property (images) and loaded first thumbnail -->
+                <% if (product.images && product.images.length > 0) { %>
+                    <img 
+                        src="<%= product.images[0].url %>" 
+                        class="card-img-top" 
+                        style="height: 250px; object-fit: cover;" 
+                        alt="<%= product.title %>"
+                    >
+                <% } else { %>
+                    <img 
+                        src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e" 
+                        class="card-img-top" 
+                        style="height: 250px; object-fit: cover;" 
+                        alt="Default Product Image"
+                    >
+                <% } %>
+
+                <div class="card-body">
+                    <h4><%= product.title %></h4>
+                    <p class="text-success">$<%= product.price %></p>
+                    <p><%= product.category %></p>
+                    <a href="/products/<%= product._id %>" class="btn btn-primary">View</a>
+                </div>
+            </div>
+        </div>
+    <% }) %>
+<% } else { %>
+    <!-- Empty State UI -->
+    <div class="col-12 text-center py-5">
+        <div class="alert alert-warning shadow-sm">
+            <h4>No Products Found!</h4>
+            <p>Try adjusting your search query or filters.</p>
+            <a href="/products" class="btn btn-outline-dark mt-2">Reset All Filters</a>
+        </div>
+    </div>
+<% } %>
+</div>
+
+<!-- Updated Dynamic Pagination -->
+<%
+    const queryParams = new URLSearchParams();
+
+    if (search) queryParams.set("search", search);
+    if (category) queryParams.set("category", category);
+    if (minPrice) queryParams.set("minPrice", minPrice);
+    if (maxPrice) queryParams.set("maxPrice", maxPrice);
+    if (sort) queryParams.set("sort", sort);
+%>
+
+<% if (totalPages > 1) { %>
+    <nav aria-label="Product pagination">
+        <ul class="pagination justify-content-center my-4">
+
+            <!-- Previous -->
+            <% if (currentPage > 1) { %>
+                <li class="page-item">
+                    <a
+                        class="page-link"
+                        href="/products?<%= queryParams.toString() %>&page=<%= currentPage - 1 %>"
+                    >
+                        Previous
+                    </a>
+                </li>
+            <% } %>
+
+            <!-- Page Numbers -->
+            <% for (let i = 1; i <= totalPages; i++) { %>
+                <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                    <a
+                        class="page-link"
+                        href="/products?<%= queryParams.toString() %>&page=<%= i %>"
+                    >
+                        <%= i %>
+                    </a>
+                </li>
+            <% } %>
+
+            <!-- Next -->
+            <% if (currentPage < totalPages) { %>
+                <li class="page-item">
+                    <a
+                        class="page-link"
+                        href="/products?<%= queryParams.toString() %>&page=<%= currentPage + 1 %>"
+                    >
+                        Next
+                    </a>
+                </li>
+            <% } %>
+
+        </ul>
+    </nav>
+<% } %>
