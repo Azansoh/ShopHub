@@ -1,7 +1,5 @@
 // Load environment variables in non-production environments
-if (process.env.NODE_ENV !== "production") {
-    require("dotenv").config();
-}
+require("dotenv").config();
 
 // 1. Import Packages
 const express = require("express");
@@ -13,6 +11,7 @@ const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
 // Models & Routes
 const User = require("./Models/user");
@@ -23,21 +22,18 @@ const cartRoutes = require("./routes/cart");
 const orderRoutes = require("./routes/order");
 const directcartRoutes = require("./routes/cart");
 const wishlistRoutes = require("./routes/wishlist");
-const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
-// 2. Create Express App
-const app = express();
-
-// 3. Connect MongoDB using environment variable
+// 2. Database Connection Setup (Single source of truth)
 const dbUrl = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/major_project";
 
+console.log("Connecting to Database URL:", dbUrl);
+
 mongoose.connect(dbUrl)
-    .then(() => {
-        console.log("MongoDB Connected");
-    })
-    .catch((err) => {
-        console.log("Database connection error:", err);
-    });
+  .then(() => console.log("Successfully connected to MongoDB!"))
+  .catch(err => console.error("DB Connection Error:", err));
+
+// 3. Create Express App
+const app = express();
 
 // 4. Views & Basic Middleware Configuration
 app.engine("ejs", ejsMate);
@@ -70,7 +66,6 @@ app.use(passport.session());
 
 passport.use(new LocalStrategy(User.authenticate()));
 
-// Fix duplicate serializer/deserializer setup
 passport.serializeUser((user, done) => {
     done(null, user.id);
 });
@@ -126,17 +121,13 @@ app.use(async (req, res, next) => {
     res.locals.success = req.flash("success");
     res.locals.error = req.flash("error");
 
-    // Dynamic Database Fetch for Cart Badge
     if (req.user) {
         try {
-            // Fresh user document fetch from Database (Session mismatch avoidance)
             const freshUser = await User.findById(req.user._id).populate("cart.product");
 
             if (freshUser && freshUser.cart) {
-                // Agar array mein objects hain (`cart.items` ya `cart` array)
                 const items = freshUser.cart.items || freshUser.cart;
                 
-                // Exclude any null/deleted product references
                 const validItems = items.filter(item => {
                     if (!item) return false;
                     const productObj = item.product !== undefined ? item.product : item;
@@ -178,5 +169,4 @@ app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
 
-
-module.exports = app;
+module.exports = app; 
