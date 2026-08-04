@@ -25,20 +25,40 @@ module.exports.signup = async (req, res, next) => {
             return res.render("users/signup", { username, email });
         }
 
-        // Check for existing Email or Username prior to registration
+        // --- 1. CHECK EXISTING EMAIL ---
         const existingEmail = await User.findOne({ email: normalizedEmail });
+        
         if (existingEmail) {
-            req.flash("error", "An account with that email already exists.");
+            // IF THE ACCOUNT EXISTS BUT IS NOT VERIFIED:
+            // Regenerate OTP, attach session ID, and redirect to verify page.
+            if (!existingEmail.isVerified) {
+                const otpCode = generateOTP();
+                await OTP.deleteMany({ userId: existingEmail._id }); // Clear old OTPs
+                await OTP.create({ userId: existingEmail._id, code: otpCode });
+                await sendOTP(existingEmail.email, otpCode);
+
+                req.session.pendingUserId = existingEmail._id;
+                req.flash("info", "This email was registered but unverified. A new 6-digit code has been sent!");
+                
+                return req.session.save((err) => {
+                    if (err) return next(err);
+                    res.redirect("/verify-otp");
+                });
+            }
+
+            // IF ACCOUNT IS ALREADY VERIFIED:
+            req.flash("error", "An account with that email already exists. Please log in.");
             return res.render("users/signup", { username, email });
         }
 
+        // --- 2. CHECK EXISTING USERNAME ---
         const existingUsername = await User.findOne({ username });
         if (existingUsername) {
             req.flash("error", "That username is already taken.");
             return res.render("users/signup", { username, email });
         }
 
-        // Register User (Unverified)
+        // --- 3. REGISTER NEW USER (Unverified) ---
         const newUser = new User({
             username,
             email: normalizedEmail,
@@ -61,7 +81,10 @@ module.exports.signup = async (req, res, next) => {
         req.session.pendingUserId = registeredUser._id;
 
         req.flash("success", "A 6-digit verification code has been sent to your email.");
-        req.session.save(() => {
+        
+        // Save session explicitly to ensure cookie is written before redirecting
+        req.session.save((err) => {
+            if (err) return next(err);
             res.redirect("/verify-otp");
         });
 
@@ -120,8 +143,7 @@ module.exports.renderVerifyForm = (req, res) => {
 };
 
 // --- 4. Verify Submitted OTP Code ---
-// --- 4. Verify Submitted OTP Code ---
-module.exports.verifyOTP = async (req, res, next) => {
+module.exports.verifyOTP = async (req, res) => {
     try {
         const { otp } = req.body;
         const userId = req.session.pendingUserId;
@@ -145,24 +167,15 @@ module.exports.verifyOTP = async (req, res, next) => {
         user.isVerified = true;
         await user.save();
 
-        // Clean up OTP record & Session data
+        // Clean up OTP record & Session
         await OTP.deleteOne({ _id: otpRecord._id });
         delete req.session.pendingUserId;
-        
-        // IMPORTANT: Clear any leftover redirectUrl so it doesn't take you back to /cart
-        delete req.session.redirectUrl;
 
         // Log the user in automatically using passport
         req.login(user, (err) => {
             if (err) return next(err);
-            
             req.flash("success", "Email verified successfully! Welcome to ShopHub.");
-            
-            // Explicitly save the session before redirecting to avoid session race conditions
-            req.session.save((saveErr) => {
-                if (saveErr) return next(saveErr);
-                res.redirect("/products"); // <--- Forces redirection to All Products page
-            });
+            res.redirect("/products");
         });
 
     } catch (err) {

@@ -21,7 +21,6 @@ const productRoutes = require("./routes/products");
 const reviewRoutes = require("./routes/review");
 const cartRoutes = require("./routes/cart");
 const orderRoutes = require("./routes/order");
-const directcartRoutes = require("./routes/cart");
 const wishlistRoutes = require("./routes/wishlist");
 
 // 2. Database Connection Setup (Single source of truth)
@@ -35,6 +34,11 @@ mongoose.connect(dbUrl)
 
 // 3. Create Express App
 const app = express();
+
+// =======================================================
+// CRITICAL FIX FOR VERCEL SESSION DROP: TRUST PROXY
+// =======================================================
+app.set("trust proxy", 1); 
 
 // 4. Views & Basic Middleware Configuration
 app.engine("ejs", ejsMate);
@@ -54,6 +58,8 @@ const store = new MongoStore({
 
 store.on("error", (err) => console.error("Session store error:", err));
 
+const isProduction = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+
 const sessionOptions = {
     secret: process.env.SECRET || "thisshouldbeabettersecret!",
     resave: false,
@@ -62,7 +68,9 @@ const sessionOptions = {
     cookie: {
         expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
         maxAge: 7 * 24 * 60 * 60 * 1000,
-        httpOnly: true
+        httpOnly: true,
+        secure: isProduction, // Uses secure cookies over HTTPS in production
+        sameSite: isProduction ? "lax" : "lax"
     }
 };
 
@@ -159,18 +167,18 @@ app.use(async (req, res, next) => {
 });
 
 // 8. Routes
+
+app.get("/", (req, res) => {
+    res.redirect("/products");
+});
+
 app.use("/", userRoutes);
 app.use("/products", productRoutes);
 app.use("/products", reviewRoutes);
 app.use("/cart", cartRoutes);
 app.use("/orders", orderRoutes);
-app.use("/", directcartRoutes);
 app.use("/", wishlistRoutes);
 
-// Home route redirect
-app.get("/", (req, res) => {
-    res.redirect("/products");
-});
 
 // 9. Start Server
 const PORT = process.env.PORT || 3000;
@@ -178,4 +186,4 @@ app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
 
-module.exports = app; 
+module.exports = app;
