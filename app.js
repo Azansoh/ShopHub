@@ -29,6 +29,9 @@ const app = express();
 // Set trust proxy first for Vercel/reverse proxies
 app.set("trust proxy", 1); 
 
+// Bypass favicon requests immediately to prevent unnecessary middleware execution
+app.get("/favicon.ico", (req, res) => res.status(204).end());
+
 // 3. Database Connection (Serverless Cached Pattern)
 const dbUrl = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/major_project";
 
@@ -83,7 +86,7 @@ const sessionOptions = {
         expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
         maxAge: 7 * 24 * 60 * 60 * 1000,
         httpOnly: true,
-        secure: isProduction && process.env.NODE_ENV === "production",
+        secure: isProduction,
         sameSite: "lax"
     }
 };
@@ -93,7 +96,11 @@ app.use(flash());
 
 // 6. Middleware to ensure DB connection per request on cold starts
 app.use(async (req, res, next) => {
-    await connectDB();
+    try {
+        await connectDB();
+    } catch (err) {
+        console.error("Failed to connect to DB in request middleware:", err);
+    }
     next();
 });
 
@@ -107,12 +114,16 @@ passport.serializeUser((user, done) => {
     done(null, user.id);
 });
 
+// Safe Deserializer to prevent unhandled promise rejections on stale session IDs
 passport.deserializeUser(async (id, done) => {
     try {
         const user = await User.findById(id);
+        if (!user) {
+            return done(null, false);
+        }
         done(null, user);
     } catch (err) {
-        done(err, null);
+        done(null, false);
     }
 });
 
@@ -128,15 +139,17 @@ passport.use(
                 let user = await User.findOne({ googleId: profile.id });
 
                 if (!user) {
-                    const email = profile.emails[0].value;
-                    user = await User.findOne({ email: email });
+                    const email = profile.emails && profile.emails[0] ? profile.emails[0].value : null;
+                    if (email) {
+                        user = await User.findOne({ email: email });
+                    }
 
                     if (user) {
                         user.googleId = profile.id;
                         await user.save();
                     } else {
                         user = new User({
-                            username: profile.displayName || email.split("@")[0],
+                            username: profile.displayName || (email ? email.split("@")[0] : "user"),
                             email: email,
                             googleId: profile.id,
                         });
@@ -151,14 +164,14 @@ passport.use(
     )
 );
 
-// 8. Global Template Variables (Safe & Fail-proof)
+// 8. Global Template Variables (Safe & Serverless-proof)
 app.use((req, res, next) => {
     res.locals.currentUser = req.user || null;
     res.locals.currentPath = req.path || "";
     res.locals.success = req.flash("success");
     res.locals.error = req.flash("error");
 
-    // Compute cart count directly from session user array safely
+    // Compute cart count directly from user object safely
     if (req.user && Array.isArray(req.user.cart)) {
         res.locals.cartCount = req.user.cart.length;
     } else {
@@ -167,6 +180,7 @@ app.use((req, res, next) => {
 
     next();
 });
+
 // 9. Routes
 app.get("/", (req, res) => {
     res.redirect("/products");
@@ -177,17 +191,17 @@ app.use("/products", productRoutes);
 app.use("/products", reviewRoutes);
 app.use("/cart", cartRoutes);
 app.use("/orders", orderRoutes);
-app.use("/checkout", orderRoutes);
+app.use("/checkout", orderRoutes); // Support /checkout path directly
 app.use("/", wishlistRoutes);
 
-// Catch-all route to handle direct checkout POST requests originating without the /cart prefix
-app.post("/checkout/direct/:id", (req, res) => {
-    res.redirect(307, `/cart/checkout/direct/${req.params.id}`);
+// 10. Global Error Handler (Prevents server crashes on unhandled errors)
+app.use((err, req, res, next) => {
+    console.error("Unhandled Error:", err.stack || err);
+    req.flash("error", "Something went wrong on the server.");
+    res.status(500).redirect("/products");
 });
 
-
-
-// 10. Start Server
+// 11. Start Server
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
     app.listen(PORT, () => {
