@@ -152,14 +152,13 @@ passport.use(
 );
 
 // 8. Global Template Variables (Safe & Fail-proof)
-// 8. Global Template Variables (Safe for Serverless)
 app.use((req, res, next) => {
     res.locals.currentUser = req.user || null;
     res.locals.currentPath = req.path || "";
     res.locals.success = req.flash("success");
     res.locals.error = req.flash("error");
 
-    // Calculate cart count safely without extra DB calls
+    // Compute cart count directly from session user array safely
     if (req.user && Array.isArray(req.user.cart)) {
         res.locals.cartCount = req.user.cart.length;
     } else {
@@ -168,7 +167,6 @@ app.use((req, res, next) => {
 
     next();
 });
-
 // 9. Routes
 app.get("/", (req, res) => {
     res.redirect("/products");
