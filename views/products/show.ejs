@@ -563,9 +563,7 @@
 
         <!-- User Actions -->
         <div class="product-actions">
-          <form method="POST" action="/checkout/direct/<%= product._id %>">
-            <button type="submit" class="btn btn-shop-buy w-100">Buy Now</button>
-          </form>
+          <a href="/cart/checkout/direct/<%= product._id %>" class="btn btn-shop-buy w-100">Buy Now</a>
 
           <form method="POST" action="/cart/add/<%= product._id %>">
             <button type="submit" class="btn btn-shop-cart w-100">Add to Cart</button>

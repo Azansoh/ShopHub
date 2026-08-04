@@ -156,7 +156,7 @@ module.exports.placeDirectOrder = async (req, res) => {
 
         if (!fullName || !address || !city || !phone) {
             req.flash("error", "Please fill in all delivery information.");
-            return res.redirect(`/checkout/direct/${id}`);
+            return res.redirect(`/cart/checkout/direct/${id}`);
         }
 
         const product = await Product.findById(id);
