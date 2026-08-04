@@ -6,7 +6,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
 const session = require("express-session");
-const MongoStore = require("connect-mongo");
+const MongoStore = require("connect-mongo").MongoStore;
 const flash = require("connect-flash");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
@@ -32,6 +32,8 @@ app.set("trust proxy", 1);
 // 3. Database Connection (Serverless Cached Pattern)
 const dbUrl = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/major_project";
 
+mongoose.connection.on("error", (err) => console.error("Mongoose Connection Error:", err));
+
 let isConnected = false;
 async function connectDB() {
     if (isConnected || mongoose.connection.readyState === 1) {
@@ -39,7 +41,7 @@ async function connectDB() {
         return;
     }
     try {
-        await mongoose.connect(dbUrl);
+        await mongoose.connect(dbUrl, { serverSelectionTimeoutMS: 5000 });
         isConnected = true;
         console.log("Successfully connected to MongoDB!");
     } catch (err) {
@@ -64,7 +66,8 @@ const store = MongoStore.create({
     crypto: {
         secret: process.env.SECRET || "thisshouldbeabettersecret!"
     },
-    touchAfter: 24 * 3600
+    touchAfter: 24 * 3600,
+    mongoOptions: { serverSelectionTimeoutMS: 5000 }
 });
 
 store.on("error", (err) => console.error("Session Store Error:", err));
@@ -197,8 +200,10 @@ app.use("/", wishlistRoutes);
 
 // 10. Start Server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+}
 
 module.exports = app;
