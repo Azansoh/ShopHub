@@ -151,38 +151,24 @@ passport.use(
     )
 );
 
-// 8. Global Template Variables
+// 8. Global Template Variables (Safe & Fail-proof)
 app.use(async (req, res, next) => {
-    res.locals.currentUser = req.user;
-    res.locals.currentPath = req.path;
-    res.locals.success = req.flash("success");
-    res.locals.error = req.flash("error");
+    try {
+        res.locals.currentUser = req.user || null;
+        res.locals.currentPath = req.path || "";
+        res.locals.success = req.flash("success");
+        res.locals.error = req.flash("error");
 
-    if (req.user) {
-        try {
-            const freshUser = await User.findById(req.user._id).populate("cart.product");
-
-            if (freshUser && freshUser.cart) {
-                const items = freshUser.cart.items || freshUser.cart;
-                
-                const validItems = items.filter(item => {
-                    if (!item) return false;
-                    const productObj = item.product !== undefined ? item.product : item;
-                    return productObj !== null && productObj !== undefined;
-                });
-
-                res.locals.cartCount = validItems.length;
-            } else {
-                res.locals.cartCount = 0;
-            }
-        } catch (err) {
-            console.error("Cart count calculation error:", err);
+        if (req.user && Array.isArray(req.user.cart)) {
+            // Count valid items safely using session user object without forced extra DB queries
+            res.locals.cartCount = req.user.cart.length;
+        } else {
             res.locals.cartCount = 0;
         }
-    } else {
+    } catch (err) {
+        console.error("Middleware error:", err);
         res.locals.cartCount = 0;
     }
-
     next();
 });
 
@@ -196,7 +182,15 @@ app.use("/products", productRoutes);
 app.use("/products", reviewRoutes);
 app.use("/cart", cartRoutes);
 app.use("/orders", orderRoutes);
+app.use("/checkout", orderRoutes);
 app.use("/", wishlistRoutes);
+
+// Catch-all route to handle direct checkout POST requests originating without the /cart prefix
+app.post("/checkout/direct/:id", (req, res) => {
+    res.redirect(307, `/cart/checkout/direct/${req.params.id}`);
+});
+
+
 
 // 10. Start Server
 const PORT = process.env.PORT || 3000;

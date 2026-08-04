@@ -24,9 +24,8 @@ router.post("/remove/:id", cart.removeFromCart);
 // Validate cart before checkout
 router.get("/checkout", cart.validateCart);
 
-
-
-// POST /checkout/direct/:id
-router.post("/checkout/direct/:id", isLoggedIn, cart.buyNow);
+// Buy Now / Direct Checkout
+router.post("/checkout/direct/:id", cart.buyNow);
+router.get("/checkout/direct/:id", cart.buyNow);
 
 module.exports = router;
