@@ -11,7 +11,7 @@ module.exports.signup = async (req, res, next) => {
         const { username, email, password } = req.body;
         const normalizedEmail = email.toLowerCase().trim();
 
-        // Regex Rules (Updated to be more flexible with special characters)
+        // Regex Rules
         const usernameRegex = /^(?=.*[A-Z])[a-zA-Z0-9_]{3,}$/;
         const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&#\-_])[^\s]{6,}$/;
 
@@ -25,17 +25,20 @@ module.exports.signup = async (req, res, next) => {
             return res.render("users/signup", { username, email });
         }
 
-        // --- 1. CHECK EXISTING EMAIL ---
+        // --- CHECK EXISTING EMAIL ---
         const existingEmail = await User.findOne({ email: normalizedEmail });
         
         if (existingEmail) {
-            // IF THE ACCOUNT EXISTS BUT IS NOT VERIFIED:
-            // Regenerate OTP, attach session ID, and redirect to verify page.
             if (!existingEmail.isVerified) {
                 const otpCode = generateOTP();
-                await OTP.deleteMany({ userId: existingEmail._id }); // Clear old OTPs
+                await OTP.deleteMany({ userId: existingEmail._id });
                 await OTP.create({ userId: existingEmail._id, code: otpCode });
-                await sendOTP(existingEmail.email, otpCode);
+
+                try {
+                    await sendOTP(existingEmail.email, otpCode);
+                } catch (emailErr) {
+                    console.error("Email send failed for existing unverified user:", emailErr);
+                }
 
                 req.session.pendingUserId = existingEmail._id;
                 req.flash("info", "This email was registered but unverified. A new 6-digit code has been sent!");
@@ -46,19 +49,18 @@ module.exports.signup = async (req, res, next) => {
                 });
             }
 
-            // IF ACCOUNT IS ALREADY VERIFIED:
             req.flash("error", "An account with that email already exists. Please log in.");
             return res.render("users/signup", { username, email });
         }
 
-        // --- 2. CHECK EXISTING USERNAME ---
+        // --- CHECK EXISTING USERNAME ---
         const existingUsername = await User.findOne({ username });
         if (existingUsername) {
             req.flash("error", "That username is already taken.");
             return res.render("users/signup", { username, email });
         }
 
-        // --- 3. REGISTER NEW USER (Unverified) ---
+        // --- REGISTER NEW USER (Unverified) ---
         const newUser = new User({
             username,
             email: normalizedEmail,
@@ -74,17 +76,24 @@ module.exports.signup = async (req, res, next) => {
             code: otpCode
         });
 
-        // Send OTP
-        await sendOTP(registeredUser.email, otpCode);
-
-        // Store session data
+        // Set pending user ID in session BEFORE sending email
         req.session.pendingUserId = registeredUser._id;
 
-        req.flash("success", "A 6-digit verification code has been sent to your email.");
+        // Try sending OTP safely
+        try {
+            await sendOTP(registeredUser.email, otpCode);
+            req.flash("success", "A 6-digit verification code has been sent to your email.");
+        } catch (emailErr) {
+            console.error("Failed to send OTP email:", emailErr);
+            req.flash("error", "User created, but failed to send verification email. Please check your email credentials.");
+        }
         
-        // Save session explicitly to ensure cookie is written before redirecting
+        // Save session explicitly to guarantee cookie persistence
         req.session.save((err) => {
-            if (err) return next(err);
+            if (err) {
+                console.error("Session save error during signup:", err);
+                return next(err);
+            }
             res.redirect("/verify-otp");
         });
 
@@ -103,7 +112,6 @@ module.exports.googleCallback = async (req, res, next) => {
     try {
         const user = req.user;
 
-        // If Google user is already verified, proceed directly
         if (user.isVerified) {
             req.flash("success", `Welcome back, ${user.username || user.email}!`);
             const redirectUrl = req.session.redirectUrl || "/products";
@@ -111,19 +119,21 @@ module.exports.googleCallback = async (req, res, next) => {
             return req.session.save(() => res.redirect(redirectUrl));
         }
 
-        // Generate and Send OTP for unverified Google user
         const otpCode = generateOTP();
-        await OTP.deleteMany({ userId: user._id }); // Clear old OTPs
+        await OTP.deleteMany({ userId: user._id });
         await OTP.create({ userId: user._id, code: otpCode });
-        await sendOTP(user.email, otpCode);
 
-        // Save pending ID before logging out
+        try {
+            await sendOTP(user.email, otpCode);
+        } catch (emailErr) {
+            console.error("Email send failed on Google callback:", emailErr);
+        }
+
         const pendingUserId = user._id;
 
         req.logout((err) => {
             if (err) return next(err);
 
-            // Re-assign pendingUserId after logout resets the session
             req.session.pendingUserId = pendingUserId;
             req.flash("success", "Security check: Please enter the 6-digit code sent to your email.");
             req.session.save(() => res.redirect("/verify-otp"));
@@ -143,7 +153,7 @@ module.exports.renderVerifyForm = (req, res) => {
 };
 
 // --- 4. Verify Submitted OTP Code ---
-module.exports.verifyOTP = async (req, res) => {
+module.exports.verifyOTP = async (req, res, next) => {
     try {
         const { otp } = req.body;
         const userId = req.session.pendingUserId;
@@ -160,18 +170,18 @@ module.exports.verifyOTP = async (req, res) => {
             return res.redirect("/verify-otp");
         }
 
-        // ==================================================
-        // MARK AS VERIFIED (This protects user from TTL delete)
-        // ==================================================
         const user = await User.findById(userId);
+        if (!user) {
+            req.flash("error", "User account not found. Please sign up again.");
+            return res.redirect("/signup");
+        }
+
         user.isVerified = true;
         await user.save();
 
-        // Clean up OTP record & Session
         await OTP.deleteOne({ _id: otpRecord._id });
         delete req.session.pendingUserId;
 
-        // Log the user in automatically using passport
         req.login(user, (err) => {
             if (err) return next(err);
             req.flash("success", "Email verified successfully! Welcome to ShopHub.");
@@ -185,7 +195,6 @@ module.exports.verifyOTP = async (req, res) => {
     }
 };
 
-
 // --- 5. Render Login Form ---
 module.exports.renderLoginForm = (req, res) => {
     res.render("users/login.ejs");
@@ -194,12 +203,16 @@ module.exports.renderLoginForm = (req, res) => {
 // --- 6. Login Handler ---
 module.exports.login = async (req, res, next) => {
     try {
-        // Prevent unverified local users from accessing the app
         if (!req.user.isVerified) {
             const otpCode = generateOTP();
             await OTP.deleteMany({ userId: req.user._id });
             await OTP.create({ userId: req.user._id, code: otpCode });
-            await sendOTP(req.user.email, otpCode);
+
+            try {
+                await sendOTP(req.user.email, otpCode);
+            } catch (emailErr) {
+                console.error("Email send failed during login check:", emailErr);
+            }
 
             const pendingUserId = req.user._id;
 

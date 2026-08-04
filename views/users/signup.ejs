@@ -181,7 +181,6 @@
     const forms = document.querySelectorAll('.needs-validation');
 
     Array.from(forms).forEach((form) => {
-      // 1. Prevent submit if any field is invalid
       form.addEventListener('submit', (event) => {
         if (!form.checkValidity()) {
           event.preventDefault();
@@ -190,7 +189,6 @@
         form.classList.add('was-validated');
       }, false);
 
-      // 2. Add real-time validation on blur for instant user feedback
       const inputs = form.querySelectorAll('input');
       inputs.forEach(input => {
         input.addEventListener('blur', () => {
@@ -199,7 +197,6 @@
       });
     });
 
-    // 3. Real-time Password Checklist Updates
     const passwordInput = document.getElementById('password');
     const checkLength = document.getElementById('pass-check-length');
     const checkLetter = document.getElementById('pass-check-letter');
@@ -216,7 +213,6 @@
       });
     }
 
-    // 4. Show / Hide Password Toggle
     const togglePasswordBtn = document.getElementById('togglePassword');
     const toggleIcon = document.getElementById('toggleIcon');
 
@@ -225,7 +221,6 @@
         const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
         passwordInput.setAttribute('type', type);
         
-        // Toggle Bootstrap Eye Icon Classes
         toggleIcon.classList.toggle('bi-eye');
         toggleIcon.classList.toggle('bi-eye-slash');
       });

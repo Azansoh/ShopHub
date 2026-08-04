@@ -23,7 +23,7 @@ const cartRoutes = require("./routes/cart");
 const orderRoutes = require("./routes/order");
 const wishlistRoutes = require("./routes/wishlist");
 
-// 2. Database Connection Setup (Single source of truth)
+// 2. Database Connection Setup
 const dbUrl = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/major_project";
 
 console.log("Connecting to Database URL:", dbUrl);
@@ -36,7 +36,7 @@ mongoose.connect(dbUrl)
 const app = express();
 
 // =======================================================
-// CRITICAL FIX FOR VERCEL SESSION DROP: TRUST PROXY
+// TRUST PROXY (Must be set before session middleware)
 // =======================================================
 app.set("trust proxy", 1); 
 
@@ -50,10 +50,14 @@ app.use(express.json());
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
 
-// 5. Session Setup (Persistent store for Vercel serverless)
+// 5. Session Setup
 const store = new MongoStore({
     uri: dbUrl,
-    collection: "sessions"
+    collection: "sessions",
+    connectionOptions: {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+    }
 });
 
 store.on("error", (err) => console.error("Session store error:", err));
@@ -69,8 +73,9 @@ const sessionOptions = {
         expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
         maxAge: 7 * 24 * 60 * 60 * 1000,
         httpOnly: true,
-        secure: isProduction, // Uses secure cookies over HTTPS in production
-        sameSite: isProduction ? "lax" : "lax"
+        // Only require secure cookies if explicitly running HTTPS in production
+        secure: isProduction && process.env.NODE_ENV === "production",
+        sameSite: "lax"
     }
 };
 
@@ -131,7 +136,7 @@ passport.use(
     )
 );
 
-// 7. Global Middleware (Local Variables & Dynamic Clean Cart Count)
+// 7. Global Middleware
 app.use(async (req, res, next) => {
     res.locals.currentUser = req.user;
     res.locals.currentPath = req.path;
@@ -167,7 +172,6 @@ app.use(async (req, res, next) => {
 });
 
 // 8. Routes
-
 app.get("/", (req, res) => {
     res.redirect("/products");
 });
@@ -178,7 +182,6 @@ app.use("/products", reviewRoutes);
 app.use("/cart", cartRoutes);
 app.use("/orders", orderRoutes);
 app.use("/", wishlistRoutes);
-
 
 // 9. Start Server
 const PORT = process.env.PORT || 3000;
