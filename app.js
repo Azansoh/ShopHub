@@ -6,7 +6,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
 const session = require("express-session");
-const MongoStore = require("connect-mongo"); // Updated to connect-mongo
+const MongoStore = require("connect-mongo");
 const flash = require("connect-flash");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
@@ -23,28 +23,32 @@ const cartRoutes = require("./routes/cart");
 const orderRoutes = require("./routes/order");
 const wishlistRoutes = require("./routes/wishlist");
 
-// 2. Database Connection Setup
-const dbUrl = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/major_project";
-
-console.log("Connecting to Database URL:", dbUrl);
-
-// Store the connection promise so connect-mongo can reuse it
-const mongooseConnection = mongoose.connect(dbUrl)
-  .then(m => m.connection.getClient())
-  .catch(err => {
-      console.error("DB Connection Error:", err);
-      throw err;
-  });
-
-// 3. Create Express App
+// 2. Express App Initialization
 const app = express();
 
-// =======================================================
-// TRUST PROXY (Must be set before session middleware)
-// =======================================================
+// Set trust proxy first for Vercel/reverse proxies
 app.set("trust proxy", 1); 
 
-// 4. Views & Basic Middleware Configuration
+// 3. Database Connection (Serverless Cached Pattern)
+const dbUrl = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/major_project";
+
+let isConnected = false;
+async function connectDB() {
+    if (isConnected || mongoose.connection.readyState === 1) {
+        isConnected = true;
+        return;
+    }
+    try {
+        await mongoose.connect(dbUrl);
+        isConnected = true;
+        console.log("Successfully connected to MongoDB!");
+    } catch (err) {
+        console.error("DB Connection Error:", err);
+    }
+}
+connectDB();
+
+// 4. Views & Middleware Configuration
 app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -54,9 +58,9 @@ app.use(express.json());
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
 
-// 5. Session Setup (Updated for Vercel / Serverless stability)
+// 5. Session Setup (Configured safely for Vercel)
 const store = MongoStore.create({
-    clientPromise: mongooseConnection,
+    mongoUrl: dbUrl,
     crypto: {
         secret: process.env.SECRET || "thisshouldbeabettersecret!"
     },
@@ -84,7 +88,13 @@ const sessionOptions = {
 app.use(session(sessionOptions));
 app.use(flash());
 
-// 6. Passport Authentication Setup
+// 6. Middleware to ensure DB connection per request on cold starts
+app.use(async (req, res, next) => {
+    await connectDB();
+    next();
+});
+
+// 7. Passport Authentication Setup
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -106,8 +116,8 @@ passport.deserializeUser(async (id, done) => {
 passport.use(
     new GoogleStrategy(
         {
-            clientID: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            clientID: process.env.GOOGLE_CLIENT_ID || "dummy_id",
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET || "dummy_secret",
             callbackURL: "/auth/google/callback",
         },
         async (accessToken, refreshToken, profile, done) => {
@@ -138,7 +148,7 @@ passport.use(
     )
 );
 
-// 7. Global Middleware
+// 8. Global Template Variables
 app.use(async (req, res, next) => {
     res.locals.currentUser = req.user;
     res.locals.currentPath = req.path;
@@ -173,7 +183,7 @@ app.use(async (req, res, next) => {
     next();
 });
 
-// 8. Routes
+// 9. Routes
 app.get("/", (req, res) => {
     res.redirect("/products");
 });
@@ -185,7 +195,7 @@ app.use("/cart", cartRoutes);
 app.use("/orders", orderRoutes);
 app.use("/", wishlistRoutes);
 
-// 9. Start Server
+// 10. Start Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
