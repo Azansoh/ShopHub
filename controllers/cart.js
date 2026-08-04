@@ -30,19 +30,27 @@ module.exports.addToCart = async (req, res) => {
 };
 
 // Show cart
+// Show cart (with automatic DB cleanup for deleted products)
 module.exports.showCart = async (req, res) => {
-    // Populate the product details inside the user's cart array
     const user = await User.findById(req.user._id).populate("cart.product");
 
+    // Filter out null products (deleted from DB)
+    const validItems = user.cart.filter(item => item.product !== null);
 
-    // Filter out items where the underlying product was deleted from DB
-    const cartProducts = user.cart
-        .filter(item => item.product !== null)
-        .map(item => ({
-            product: item.product,
-            quantity: item.quantity,
-            subtotal: item.product.price * item.quantity
+    // If deleted items were found, clean up the database document
+    if (validItems.length !== user.cart.length) {
+        user.cart = validItems.map(item => ({
+            product: item.product._id,
+            quantity: item.quantity
         }));
+        await user.save();
+    }
+
+    const cartProducts = validItems.map(item => ({
+        product: item.product,
+        quantity: item.quantity,
+        subtotal: item.product.price * item.quantity
+    }));
 
     const total = cartProducts.reduce(
         (sum, item) => sum + item.subtotal,
@@ -110,17 +118,22 @@ module.exports.removeFromCart = async (req, res) => {
 module.exports.validateCart = async (req, res) => {
     const user = await User.findById(req.user._id).populate("cart.product");
 
+    // Automatically remove references to deleted products from DB
+    const validItems = user.cart.filter(item => item.product !== null);
+    if (validItems.length !== user.cart.length) {
+        user.cart = validItems.map(item => ({
+            product: item.product._id,
+            quantity: item.quantity
+        }));
+        await user.save();
+    }
+
     if (!user.cart || user.cart.length === 0) {
         req.flash("error", "Your cart is empty!");
         return res.redirect("/cart");
     }
 
     for (const item of user.cart) {
-        if (!item.product) {
-            req.flash("error", "A product in your cart no longer exists!");
-            return res.redirect("/cart");
-        }
-
         if (item.quantity > item.product.stock) {
             req.flash(
                 "error",
@@ -133,7 +146,6 @@ module.exports.validateCart = async (req, res) => {
     // Cart is valid
     res.redirect("/checkout");
 };
-
 
 
 // Buy Now (Add item to database cart and immediately go to cart)
