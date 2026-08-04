@@ -6,7 +6,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
 const session = require("express-session");
-const MongoStore = require("connect-mongodb-session")(session);
+const MongoStore = require("connect-mongo"); // Updated to connect-mongo
 const flash = require("connect-flash");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
@@ -50,14 +50,13 @@ app.use(express.json());
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
 
-// 5. Session Setup
-const store = new MongoStore({
-    uri: dbUrl,
-    collection: "sessions",
-    connectionOptions: {
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-    }
+// 5. Session Setup (Updated for Vercel / Serverless stability)
+const store = MongoStore.create({
+    mongoUrl: dbUrl,
+    crypto: {
+        secret: process.env.SECRET || "thisshouldbeabettersecret!"
+    },
+    touchAfter: 24 * 3600 // Resave session only once every 24 hours unless modified
 });
 
 store.on("error", (err) => console.error("Session store error:", err));
@@ -65,15 +64,14 @@ store.on("error", (err) => console.error("Session store error:", err));
 const isProduction = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
 
 const sessionOptions = {
+    store: store,
     secret: process.env.SECRET || "thisshouldbeabettersecret!",
     resave: false,
     saveUninitialized: false,
-    store: store,
     cookie: {
         expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
         maxAge: 7 * 24 * 60 * 60 * 1000,
         httpOnly: true,
-        // Only require secure cookies if explicitly running HTTPS in production
         secure: isProduction && process.env.NODE_ENV === "production",
         sameSite: "lax"
     }
