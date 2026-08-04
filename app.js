@@ -28,9 +28,13 @@ const dbUrl = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/major_project"
 
 console.log("Connecting to Database URL:", dbUrl);
 
-mongoose.connect(dbUrl)
-  .then(() => console.log("Successfully connected to MongoDB!"))
-  .catch(err => console.error("DB Connection Error:", err));
+// Store the connection promise so connect-mongo can reuse it
+const mongooseConnection = mongoose.connect(dbUrl)
+  .then(m => m.connection.getClient())
+  .catch(err => {
+      console.error("DB Connection Error:", err);
+      throw err;
+  });
 
 // 3. Create Express App
 const app = express();
@@ -52,14 +56,14 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // 5. Session Setup (Updated for Vercel / Serverless stability)
 const store = MongoStore.create({
-    mongoUrl: dbUrl,
+    clientPromise: mongooseConnection,
     crypto: {
         secret: process.env.SECRET || "thisshouldbeabettersecret!"
     },
-    touchAfter: 24 * 3600 // Resave session only once every 24 hours unless modified
+    touchAfter: 24 * 3600
 });
 
-store.on("error", (err) => console.error("Session store error:", err));
+store.on("error", (err) => console.error("Session Store Error:", err));
 
 const isProduction = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
 
