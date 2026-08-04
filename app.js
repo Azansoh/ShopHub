@@ -152,23 +152,20 @@ passport.use(
 );
 
 // 8. Global Template Variables (Safe & Fail-proof)
-app.use(async (req, res, next) => {
-    try {
-        res.locals.currentUser = req.user || null;
-        res.locals.currentPath = req.path || "";
-        res.locals.success = req.flash("success");
-        res.locals.error = req.flash("error");
+// 8. Global Template Variables (Safe for Serverless)
+app.use((req, res, next) => {
+    res.locals.currentUser = req.user || null;
+    res.locals.currentPath = req.path || "";
+    res.locals.success = req.flash("success");
+    res.locals.error = req.flash("error");
 
-        if (req.user && Array.isArray(req.user.cart)) {
-            // Count valid items safely using session user object without forced extra DB queries
-            res.locals.cartCount = req.user.cart.length;
-        } else {
-            res.locals.cartCount = 0;
-        }
-    } catch (err) {
-        console.error("Middleware error:", err);
+    // Calculate cart count safely without extra DB calls
+    if (req.user && Array.isArray(req.user.cart)) {
+        res.locals.cartCount = req.user.cart.length;
+    } else {
         res.locals.cartCount = 0;
     }
+
     next();
 });
 
