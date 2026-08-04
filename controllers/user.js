@@ -120,7 +120,8 @@ module.exports.renderVerifyForm = (req, res) => {
 };
 
 // --- 4. Verify Submitted OTP Code ---
-module.exports.verifyOTP = async (req, res) => {
+// --- 4. Verify Submitted OTP Code ---
+module.exports.verifyOTP = async (req, res, next) => {
     try {
         const { otp } = req.body;
         const userId = req.session.pendingUserId;
@@ -144,15 +145,24 @@ module.exports.verifyOTP = async (req, res) => {
         user.isVerified = true;
         await user.save();
 
-        // Clean up OTP record & Session
+        // Clean up OTP record & Session data
         await OTP.deleteOne({ _id: otpRecord._id });
         delete req.session.pendingUserId;
+        
+        // IMPORTANT: Clear any leftover redirectUrl so it doesn't take you back to /cart
+        delete req.session.redirectUrl;
 
         // Log the user in automatically using passport
         req.login(user, (err) => {
             if (err) return next(err);
+            
             req.flash("success", "Email verified successfully! Welcome to ShopHub.");
-            res.redirect("/");
+            
+            // Explicitly save the session before redirecting to avoid session race conditions
+            req.session.save((saveErr) => {
+                if (saveErr) return next(saveErr);
+                res.redirect("/products"); // <--- Forces redirection to All Products page
+            });
         });
 
     } catch (err) {

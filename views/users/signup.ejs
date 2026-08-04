@@ -77,19 +77,34 @@
                     <label for="password" class="form-label fw-medium">
                         Password
                     </label>
-                    <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        class="form-control rounded-3"
-                        required
-                        minlength="6"
-                        pattern="(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&])[a-zA-Z\d@$!%*?&]{6,}"
-                        autocomplete="new-password"
-                        placeholder="••••••••"
-                    />
+                    
+                    <!-- Input group with password toggle button -->
+                    <div class="input-group has-validation">
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            class="form-control rounded-start-3"
+                            required
+                            minlength="6"
+                            pattern="(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&#\-_])[^\s]{6,}"
+                            autocomplete="new-password"
+                            placeholder="password"
+                        />
+                        <button 
+                            class="btn btn-outline-secondary rounded-end-3" 
+                            type="button" 
+                            id="togglePassword"
+                            aria-label="Toggle password visibility"
+                        >
+                            <i class="bi bi-eye" id="toggleIcon"></i>
+                        </button>
+                        <div class="invalid-feedback">
+                            Password does not meet all the required conditions below.
+                        </div>
+                    </div>
 
-                    <!-- Password Requirements -->
+                    <!-- Password Requirements Checklist -->
                     <div class="mt-3 p-3 bg-body-tertiary rounded-3 border border-secondary-subtle">
                         <span class="d-block fw-semibold small text-secondary mb-2">
                             Password Requirements:
@@ -119,7 +134,7 @@
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="pass-check-special" disabled>
                             <label class="form-check-label small text-secondary" for="pass-check-special">
-                                At least 1 special character (@$!%*?&)
+                                At least 1 special character (@$!%*?&#-_)
                             </label>
                         </div>
                     </div>
@@ -197,7 +212,22 @@
         checkLength.checked = val.length >= 6;
         checkLetter.checked = /[a-zA-Z]/.test(val);
         checkNumber.checked = /\d/.test(val);
-        checkSpecial.checked = /[@$!%*?&]/.test(val);
+        checkSpecial.checked = /[@$!%*?&#\-_]/.test(val);
+      });
+    }
+
+    // 4. Show / Hide Password Toggle
+    const togglePasswordBtn = document.getElementById('togglePassword');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    if (togglePasswordBtn && passwordInput && toggleIcon) {
+      togglePasswordBtn.addEventListener('click', () => {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        
+        // Toggle Bootstrap Eye Icon Classes
+        toggleIcon.classList.toggle('bi-eye');
+        toggleIcon.classList.toggle('bi-eye-slash');
       });
     }
   })();
